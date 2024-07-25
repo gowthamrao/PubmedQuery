@@ -12,7 +12,7 @@ getPubmQuerySearchString <-
   function(meshTerm, freeText = NULL) {
     # Validate input types
     checkmate::assertString(meshTerm, null.ok = FALSE)
-    
+
     # Define base query parts
     baseQuery <- paste0(
       "(",
@@ -38,7 +38,7 @@ getPubmQuerySearchString <-
       ")",
       ")"
     )
-    
+
     # Define excluded publication types
     removedUnwanted <- paste0(
       " NOT (",
@@ -54,24 +54,26 @@ getPubmQuerySearchString <-
       ")",
       ")"
     )
-    
+
     baseQuery <- paste0(baseQuery, removedUnwanted)
-    
+
     # Construct query combining MeSH term and base query
     query <-
-      paste0(meshTerm,
-             "[MeSH Major Topic] OR ",
-             meshTerm,
-             "[Title/Abstract]")
-    
-    
+      paste0(
+        meshTerm,
+        "[MeSH Major Topic] OR ",
+        meshTerm,
+        "[Title/Abstract]"
+      )
+
+
     if (!is.null(freeText)) {
       freeTextQuery <- paste0(meshTerm, "[Title/Abstract]")
       query <- paste0("( ", query, " OR ", freeTextQuery, ")")
     }
-    
+
     completeQuery <-
       paste0("( ", query, " ) AND ( ", baseQuery, ")")
-    
+
     return(completeQuery)
   }

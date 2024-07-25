@@ -13,9 +13,30 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
-    <loc>/reference/PubmedQuery-package.html</loc>
+    <loc>/reference/DrugExposure-package.html</loc>
+  </url>
+  <url>
+    <loc>/reference/getPubMedArticleSummaries.html</loc>
+  </url>
+  <url>
+    <loc>/reference/getPubMedPmcIdsFromPmIds.html</loc>
+  </url>
+  <url>
+    <loc>/reference/getPubmQuerySearchString.html</loc>
   </url>
   <url>
     <loc>/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>/reference/PubmedQuery-package.html</loc>
+  </url>
+  <url>
+    <loc>/reference/retrieveAndSavePmcXmlForPmcIds.html</loc>
+  </url>
+  <url>
+    <loc>/reference/retrievePMCXMLUsingRentrez.html</loc>
+  </url>
+  <url>
+    <loc>/reference/retrievePMCXMLUsingTidyPmc.html</loc>
   </url>
 </urlset>

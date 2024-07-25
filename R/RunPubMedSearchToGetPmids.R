@@ -4,16 +4,18 @@ runPubMedSearchToGetPmids <-
   function(searchString) {
     # Initial search to get WebEnv and QueryKey
     initialSearch <-
-      rentrez::entrez_search(db = "pubmed",
-                             term = searchString,
-                             use_history = TRUE)
-    
+      rentrez::entrez_search(
+        db = "pubmed",
+        term = searchString,
+        use_history = TRUE
+      )
+
     # Total number of hits
     totalCount <- initialSearch$count
-    
+
     # Batch size
     batchSize <- 200
-    
+
     # Retrieve all PubMed IDs
     allPmids <-
       vector("list", length = ceiling(totalCount / batchSize))

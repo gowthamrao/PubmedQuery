@@ -23,20 +23,20 @@ retrieveAndSavePmcXmlForPmcIds <-
            incremental = TRUE) {
     xmlList <- list()
     failures <- list()
-    
+
     for (pmcId in pmcIds) {
       methodUsed <- "tidyPmc"
       outputDir <- file.path(outputFolder, methodUsed)
       outputFile <- file.path(outputDir, paste0(pmcId, ".xml"))
-      
+
       if (incremental && file.exists(outputFile)) {
         writeLines(paste0("File already exists for ", pmcId, ". Skipping."))
         next
       }
-      
+
       xmlContent <-
-        OhdsiHelpers::retrievePMCXMLUsingTidyPmc(pmcId = pmcId)
-      
+        retrievePMCXMLUsingTidyPmc(pmcId = pmcId)
+
       if (is.null(xmlContent)) {
         writeLines(paste0(
           "Failed to retrieve XML for ",
@@ -48,9 +48,9 @@ retrieveAndSavePmcXmlForPmcIds <-
         outputDir <- file.path(outputFolder, methodUsed)
         outputFile <- file.path(outputDir, paste0(pmcId, ".xml"))
       }
-      
+
       dir.create(outputDir, recursive = TRUE, showWarnings = FALSE)
-      
+
       if (!is.null(xmlContent)) {
         if (methodUsed == "tidyPmc") {
           xml2::write_xml(x = xmlContent, file = outputFile)
@@ -64,6 +64,6 @@ retrieveAndSavePmcXmlForPmcIds <-
         failures[[pmcId]] <- NA
       }
     }
-    
+
     list(success = xmlList, failed = failures)
   }

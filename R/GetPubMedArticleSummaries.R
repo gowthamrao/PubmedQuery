@@ -12,43 +12,46 @@ getPubMedArticleSummaries <- function(pmids) {
   library(tibble)
   library(purrr)
   library(xml2)
-  
+
   # Check for empty PMIDs input
   if (length(pmids) == 0) {
-    return(tibble(pmid = character()))  # Returns an empty tibble if no PMIDs are provided
+    return(tibble(pmid = character())) # Returns an empty tibble if no PMIDs are provided
   }
-  
+
   # Initialize tibble to accumulate results
   results <- tibble()
-  
+
   # Process in batches to avoid API limit
   batch_size <-
-    50  # Define batch size (adjust based on your rate limit)
+    50 # Define batch size (adjust based on your rate limit)
   pmid_batches <-
     split(pmids, ceiling(seq_along(pmids) / batch_size))
-  
+
   for (pmids in pmid_batches) {
     # Attempt to retrieve summaries, retrying if rate limit exceeded
     repeat {
-      tryCatch({
-        articleSummaries <-
-          rentrez::entrez_summary(db = "pubmed", id = pmids)
-        break  # Exit the repeat loop on success
-      }, error = function(e) {
-        if (grepl("API rate limit exceeded", e$message)) {
-          Sys.sleep(60)  # Wait 60 seconds before retrying
-        } else {
-          stop(e)  # Re-throw the error if it's not a rate limit issue
+      tryCatch(
+        {
+          articleSummaries <-
+            rentrez::entrez_summary(db = "pubmed", id = pmids)
+          break # Exit the repeat loop on success
+        },
+        error = function(e) {
+          if (grepl("API rate limit exceeded", e$message)) {
+            Sys.sleep(60) # Wait 60 seconds before retrying
+          } else {
+            stop(e) # Re-throw the error if it's not a rate limit issue
+          }
         }
-      })
+      )
     }
-    
+
     summariesList <- setNames(as.list(articleSummaries), pmids)
-    
+
     # Construct the tibble from the list of articles
-    articlesData <- map_df(names(summariesList), function(pmid) {
+    articlesData <- purrr::map_df(names(summariesList), function(pmid) {
       article <- summariesList[[pmid]]
-      
+
       # Fetch the full record for the given PMID to get additional details
       full_record_xml <-
         rentrez::entrez_fetch(
@@ -58,11 +61,11 @@ getPubMedArticleSummaries <- function(pmids) {
           parsed = FALSE
         )
       full_record <- xml2::read_xml(full_record_xml)
-      
+
       abstract <- xml2::xml_find_all(full_record, ".//AbstractText")
       abstract_text <- xml2::xml_text(abstract)
       abstract_combined <- paste(abstract_text, collapse = " ")
-      
+
       doi <-
         xml2::xml_text(xml2::xml_find_first(full_record, ".//ELocationID[@EIdType='doi']"))
       journal <-
@@ -91,9 +94,9 @@ getPubMedArticleSummaries <- function(pmids) {
       grants <-
         xml2::xml_text(xml2::xml_find_all(full_record, ".//GrantList/Grant"))
       grants_combined <- paste(grants, collapse = "; ")
-      
+
       if (is.null(article)) {
-        return(tibble(pmid = pmid, uid = NA_character_))  # Return a row with NA values if no summary data
+        return(tibble(pmid = pmid, uid = NA_character_)) # Return a row with NA values if no summary data
       } else {
         tibble(
           pmid = pmid,
@@ -102,37 +105,46 @@ getPubMedArticleSummaries <- function(pmids) {
           pubdate = safeExtract(article, "pubdate"),
           epubdate = safeExtract(article, "epubdate"),
           source = safeExtract(article, "source"),
-          authors = if (!is.null(article$authors))
+          authors = if (!is.null(article$authors)) {
             toString(sapply(article$authors, `[`, "name"))
-          else
-            NA_character_,
+          } else {
+            NA_character_
+          },
           lastauthor = safeExtract(article, "lastauthor"),
-          title = safeExtract(article, "title"),
+          title = if (is.null(article$authors)) {
+            safeExtract(article, "title")
+          } else {
+            title
+          },
           volume = safeExtract(article, "volume"),
           issue = safeExtract(article, "issue"),
           pages = safeExtract(article, "pages"),
-          lang = if (!is.null(article$lang))
+          lang = if (!is.null(article$lang)) {
             safeExtract(article, "lang[1]")
-          else
-            NA_character_,
+          } else {
+            NA_character_
+          },
           issn = safeExtract(article, "issn"),
           essn = safeExtract(article, "essn"),
-          pubtype = if (!is.null(article$pubtype))
+          pubtype = if (!is.null(article$pubtype)) {
             toString(article$pubtype)
-          else
-            NA_character_,
+          } else {
+            NA_character_
+          },
           recordstatus = safeExtract(article, "recordstatus"),
           pubstatus = safeExtract(article, "pubstatus"),
-          pmcrefcount = if (!is.null(article$pmcrefcount))
+          pmcrefcount = if (!is.null(article$pmcrefcount)) {
             as.integer(article$pmcrefcount)
-          else
-            NA_integer_,
+          } else {
+            NA_integer_
+          },
           fulljournalname = safeExtract(article, "fulljournalname"),
           doctype = safeExtract(article, "doctype"),
-          sortpubdate = if (!is.null(article$sortpubdate))
+          sortpubdate = if (!is.null(article$sortpubdate)) {
             as.Date(article$sortpubdate)
-          else
-            NA,
+          } else {
+            NA
+          },
           sortfirstauthor = safeExtract(article, "sortfirstauthor"),
           abstract = abstract_combined,
           doi = doi,
@@ -148,11 +160,11 @@ getPubMedArticleSummaries <- function(pmids) {
         )
       }
     })
-    
+
     # Append batch results
     results <- bind_rows(results, articlesData)
   }
-  
+
   return(results)
 }
 
@@ -161,6 +173,6 @@ safeExtract <- function(article, field) {
   if (!is.null(article) && !is.null(article[[field]])) {
     return(as.character(article[[field]]))
   } else {
-    return(NA_character_)  # Returns NA for missing data
+    return(NA_character_) # Returns NA for missing data
   }
 }
